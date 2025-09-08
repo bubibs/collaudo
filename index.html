@@ -362,7 +362,12 @@
         
         /* Stili per la stampa */
         #reportToPrint {
-            display: none;
+            /* Cambio per permettere a html2pdf di calcolare il layout */
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+            width: 210mm;
+            min-height: 297mm;
         }
         @media print {
             @page {
@@ -388,6 +393,16 @@
             /* Nascondi elementi non stampabili */
             .upload-btn, .hidden-input, .manage-btn, #configSection, .pdf-btn, .add-btn, .delete-btn, .toggle-btn, #machineManagement, #photoModal, .handle, #messageBox, #saveReportBtn, #loadReportBtn, .modal-close {
                 display: none !important;
+            }
+            /* Rendi visibile l'interfaccia di stampa */
+            #workingInterface {
+                display: none;
+            }
+            #reportToPrint {
+                position: static;
+                left: auto;
+                top: auto;
+                display: block;
             }
 
             /* Frontespizio */
@@ -1108,7 +1123,8 @@
         photoModal.style.display = 'flex';
     }
 
-    function showMessageBox(message, duration = 3000) {
+    function showMessageBox(message, duration = 3000, isError = false) {
+        messageBox.style.backgroundColor = isError ? '#dc3545' : '#4CAF50';
         messageBox.querySelector('span').textContent = message;
         messageBox.style.opacity = 1;
         setTimeout(() => {
@@ -1135,6 +1151,12 @@
             deleteMachineModal.style.display = "none"
         }
     }
+
+    macchinarioField.addEventListener('input', () => {
+        if (currentReport) {
+            reportsData[currentReport].details.macchinario = macchinarioField.value;
+        }
+    });
 
     machineNameInput.addEventListener('input', (event) => {
         macchinarioField.value = event.target.value;
@@ -1167,9 +1189,9 @@
             showMessageBox(`Nuovo report per "${newName}" creato!`);
             machineNameInput.value = '';
         } else if (newName) {
-            showMessageBox(`Il report per "${newName}" esiste già.`, 4000);
+            showMessageBox(`Il report per "${newName}" esiste già.`, 4000, true);
         } else {
-            showMessageBox("Per favore, inserisci un nome per il nuovo report.", 4000);
+            showMessageBox("Per favore, inserisci un nome per il nuovo report.", 4000, true);
         }
     });
     
@@ -1206,7 +1228,7 @@
 
     manageChecklistBtn.addEventListener('click', () => {
         if (!currentReport) {
-            showMessageBox("Devi prima caricare un report per poter gestire gli step.", 4000);
+            showMessageBox("Devi prima caricare un report per poter gestire gli step.", 4000, true);
             return;
         }
         configSection.style.display = configSection.style.display === 'none' ? 'block' : 'none';
@@ -1244,39 +1266,43 @@
         renderConfigList();
     });
 
-    generatePdfBtn.addEventListener('click', () => {
-        // Step 1: Salva i dati correnti
-        if (currentReport) {
+    generatePdfBtn.addEventListener('click', async () => {
+        try {
+            // Step 1: Salva i dati correnti
+            if (!currentReport) {
+                showMessageBox("Carica un report prima di generare il PDF.", 4000, true);
+                return;
+            }
             saveReport();
-        } else {
-            showMessageBox("Carica un report prima di generare il PDF.", 4000);
-            return;
-        }
 
-        // Step 2: Ottieni i dati dal report salvato in localStorage
-        const currentData = reportsData[currentReport];
-        if (!currentData) {
-            showMessageBox("Report non trovato. Per favore, carica o crea un report.", 4000);
-            return;
-        }
+            // Step 2: Ottieni i dati dal report salvato in localStorage
+            const currentData = reportsData[currentReport];
+            if (!currentData) {
+                showMessageBox("Report non trovato. Per favore, carica o crea un report.", 4000, true);
+                return;
+            }
 
-        // Popola il report nascosto con i dati
-        pdfTitle.textContent = `Manutenzione e Messa in Fase Macchinario ${currentData.details.macchinario}`;
-        printMacchinario.textContent = currentData.details.macchinario;
-        printModello.textContent = currentData.details.modello;
-        printSeriale.textContent = currentData.details.seriale;
-        reportDateSpan.textContent = new Date().toLocaleDateString('it-IT');
-        printAzioniCorrettive.textContent = currentData.finalNotes.azioniCorrettive;
-        printNoteAggiuntive.textContent = currentData.finalNotes.noteAggiuntive;
+            // Step 3: Popola il report nascosto con i dati
+            pdfTitle.textContent = `Manutenzione e Messa in Fase Macchinario ${currentData.details.macchinario}`;
+            printMacchinario.textContent = currentData.details.macchinario;
+            printModello.textContent = currentData.details.modello;
+            printSeriale.textContent = currentData.details.seriale;
+            reportDateSpan.textContent = new Date().toLocaleDateString('it-IT');
+            printAzioniCorrettive.textContent = currentData.finalNotes.azioniCorrettive;
+            printNoteAggiuntive.textContent = currentData.finalNotes.noteAggiuntive;
 
-        // Popola la checklist e le foto per la stampa
-        printChecklistItems.innerHTML = '';
-        printAllPhotos.innerHTML = '';
-        let mainOperator = '';
-        
-        currentData.checklistConfig.forEach((step) => {
-            const stepData = currentData.checklistData[step.id] || {};
-            if (stepData.checked) {
+            // Popola la checklist e le foto per la stampa
+            printChecklistItems.innerHTML = '';
+            printAllPhotos.innerHTML = '';
+            let mainOperator = '';
+            
+            const checkedSteps = currentData.checklistConfig.filter(step => {
+                const stepData = currentData.checklistData[step.id] || {};
+                return stepData.checked;
+            });
+
+            for (const step of checkedSteps) {
+                const stepData = currentData.checklistData[step.id] || {};
                 const checkedStepDiv = document.createElement('div');
                 checkedStepDiv.classList.add('checklist-item');
                 checkedStepDiv.innerHTML = `
@@ -1301,35 +1327,73 @@
                 
                 // Aggiungi le immagini
                 const allImages = [...(stepData.images || []), ...(stepData.measurements || []).map(m => m.image)].filter(img => img);
-                allImages.forEach(imgSrc => {
+                for (const imgSrc of allImages) {
                     const photoItem = document.createElement('div');
                     photoItem.classList.add('photo-item');
-                    photoItem.innerHTML = `<img src="${imgSrc}"><p>${step.description}</p>`;
+                    const imgElement = document.createElement('img');
+                    imgElement.src = imgSrc;
+                    
+                    const pElement = document.createElement('p');
+                    pElement.textContent = step.description;
+
+                    photoItem.appendChild(imgElement);
+                    photoItem.appendChild(pElement);
                     printAllPhotos.appendChild(photoItem);
-                });
+                }
             }
-        });
-        reportOperatorSpan.textContent = mainOperator;
+            reportOperatorSpan.textContent = mainOperator;
 
-        // Step 3: Mostra il report nascosto per la stampa
-        reportToPrint.style.display = 'block';
+            // Step 4: Rendi il report visibile ma fuori dallo schermo
+            reportToPrint.style.visibility = 'visible';
+            reportToPrint.style.position = 'static';
+            reportToPrint.style.left = 'auto';
+            reportToPrint.style.top = 'auto';
+            reportToPrint.style.width = '210mm';
+            reportToPrint.style.minHeight = '297mm';
 
-        // Step 4: Genera il PDF dal contenuto nascosto
-        const element = document.getElementById('mainReportContent');
-        const filename = `Report_${currentData.details.macchinario.replace(/\s/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
-        
-        const options = {
-            margin: [0, 0, 0, 0], // Margini gestiti dal CSS
-            filename: filename,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
+            // Attendere il caricamento di tutte le immagini
+            const images = printAllPhotos.querySelectorAll('img');
+            const promises = Array.from(images).map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(resolve => {
+                    img.onload = () => resolve();
+                    img.onerror = () => {
+                        console.error('Failed to load image:', img.src);
+                        resolve();
+                    };
+                });
+            });
+            await Promise.all(promises);
 
-        html2pdf().set(options).from(element).save().then(() => {
+            // Step 5: Genera il PDF
+            const element = document.getElementById('mainReportContent');
+            const filename = `Report_${currentData.details.macchinario.replace(/\s/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
+            
+            const options = {
+                margin: 0,
+                filename: filename,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true 
+                },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            const worker = html2pdf().set(options).from(element);
+            await worker.save();
+            
+            showMessageBox('Report PDF generato con successo!');
+        } catch (error) {
+            console.error('Errore durante la generazione del PDF:', error);
+            showMessageBox('Errore nella generazione del PDF. Riprova.', 5000, true);
+        } finally {
             // Nascondi nuovamente il report dopo la generazione
-            reportToPrint.style.display = 'none';
-        });
+            reportToPrint.style.visibility = 'hidden';
+            reportToPrint.style.position = 'absolute';
+            reportToPrint.style.left = '-9999px';
+            reportToPrint.style.top = '-9999px';
+        }
     });
 
     document.addEventListener('input', function(event) {
