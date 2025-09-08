@@ -861,7 +861,7 @@
         document.getElementById('note-aggiuntive').value = reportData.finalNotes.noteAggiuntive || '';
         renderChecklist(reportData.checklistConfig, reportData.checklistData);
         updateProgressBar();
-        attachImageClickListeners();
+        attachImageClickListeners(); // Chiamata per allegare gli event listener alle immagini caricate
         toggleReportContent(true);
         saveReportBtn.style.display = 'block';
         deleteMachineBtn.style.display = 'flex';
