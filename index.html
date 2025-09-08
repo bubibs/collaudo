@@ -665,8 +665,9 @@
             <h1>Report di Intervento Tecnico</h1>
             <h2>Manutenzione e Messa in Fase Macchinario</h2>
             <div class="report-details">
-                <p><span>Oggetto:</span> Messa in Fase e Test Macchinario</p>
-                <p><span>Cliente:</span> N/A</p>
+                <p><span>Macchinario:</span> <span id="printMacchinario"></span></p>
+                <p><span>Modello:</span> <span id="printModello"></span></p>
+                <p><span>Numero di Serie:</span> <span id="printSeriale"></span></p>
                 <p><span>Data Report:</span> <span id="reportDate"></span></p>
                 <p><span>Operatore:</span> <span id="reportOperator"></span></p>
             </div>
@@ -676,22 +677,6 @@
         </div>
         
         <div class="main-report-body">
-            <div class="section">
-                <h2>Dettagli dell'Intervento</h2>
-                <div class="form-group">
-                    <label>Nome Macchinario:</label>
-                    <span id="printMacchinario"></span>
-                </div>
-                <div class="form-group">
-                    <label>Modello:</label>
-                    <span id="printModello"></span>
-                </div>
-                <div class="form-group">
-                    <label>Numero di Serie:</label>
-                    <span id="printSeriale"></span>
-                </div>
-            </div>
-            
             <div class="section">
                 <h2>Lista di Controllo e Verifica</h2>
                 <div id="printChecklistItems"></div>
@@ -750,6 +735,8 @@
     const messageBox = document.getElementById('messageBox');
     
     // Elementi per il report stampabile
+    const reportToPrint = document.getElementById('reportToPrint');
+    const mainReportContent = document.getElementById('mainReportContent');
     const reportDateSpan = document.getElementById('reportDate');
     const reportOperatorSpan = document.getElementById('reportOperator');
     const printMacchinario = document.getElementById('printMacchinario');
@@ -1272,7 +1259,7 @@
             return;
         }
 
-        // Step 3: Popola il report nascosto con i dati
+        // Popola il report nascosto con i dati
         printMacchinario.textContent = currentData.details.macchinario;
         printModello.textContent = currentData.details.modello;
         printSeriale.textContent = currentData.details.seriale;
@@ -1322,6 +1309,9 @@
         });
         reportOperatorSpan.textContent = mainOperator;
 
+        // Step 3: Mostra il report nascosto per la stampa
+        reportToPrint.style.display = 'block';
+
         // Step 4: Genera il PDF dal contenuto nascosto
         const element = document.getElementById('mainReportContent');
         const filename = `Report_${currentData.details.macchinario.replace(/\s/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
@@ -1334,7 +1324,10 @@
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        html2pdf().set(options).from(element).save();
+        html2pdf().set(options).from(element).save().then(() => {
+            // Nascondi nuovamente il report dopo la generazione
+            reportToPrint.style.display = 'none';
+        });
     });
 
     document.addEventListener('input', function(event) {
