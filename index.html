@@ -111,12 +111,42 @@
             flex-wrap: wrap;
             gap: 10px;
         }
+        .image-wrapper {
+            position: relative;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        .image-wrapper:hover {
+            transform: scale(1.05);
+        }
         .image-preview {
             max-width: 100px;
             height: auto;
             border-radius: 6px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             cursor: pointer;
+            display: block; /* to avoid extra space under the image */
+        }
+        .delete-photo-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: rgba(220, 53, 69, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .image-wrapper:hover .delete-photo-btn {
+            opacity: 1;
         }
         .upload-btn {
             background-color: #1a5276;
@@ -826,10 +856,10 @@
                 images: []
             };
 
-            const measurementInputs = itemDiv.querySelectorAll('.measurement-group input[type="text"]');
-            const measurementImageContainers = itemDiv.querySelectorAll('.measurement-group .image-container');
-            measurementInputs.forEach((input, i) => {
-                const img = measurementImageContainers[i].querySelector('.image-preview');
+            const measurementGroups = itemDiv.querySelectorAll('.measurement-group');
+            measurementGroups.forEach((group, i) => {
+                const input = group.querySelector('.item-measurement');
+                const img = group.querySelector('.image-preview');
                 const imgSrc = img ? img.src : '';
                 stepData.measurements.push({ value: input.value, image: imgSrc });
             });
@@ -861,7 +891,7 @@
         document.getElementById('note-aggiuntive').value = reportData.finalNotes.noteAggiuntive || '';
         renderChecklist(reportData.checklistConfig, reportData.checklistData);
         updateProgressBar();
-        attachImageClickListeners(); // Chiamata per allegare gli event listener alle immagini caricate
+        attachImageClickListeners();
         toggleReportContent(true);
         saveReportBtn.style.display = 'block';
         deleteMachineBtn.style.display = 'flex';
@@ -916,16 +946,16 @@
                             <label>Misura ${i + 1}:</label>
                             <input type="text" class="item-measurement" value="${measurementValue}" placeholder="Valore (es. 12.5 mm)">
                             <label for="image-upload-${item.id}-${i}" class="upload-btn">Allega foto per quota ${i + 1}</label>
-                            <input type="file" id="image-upload-${item.id}-${i}" class="hidden-input" accept="image/*">
+                            <input type="file" id="image-upload-${item.id}-${i}" class="hidden-input" data-is-measurement="true" data-index="${i}" accept="image/*">
                             <div class="image-container">
-                                ${measurementImage ? `<img src="${measurementImage}" class="image-preview">` : ''}
+                                ${measurementImage ? `<div class="image-wrapper"><img src="${measurementImage}" class="image-preview"><button class="delete-photo-btn" data-type="measurement" data-index="${i}">&times;</button></div>` : ''}
                             </div>
                         </div>
                     `;
                 }
             }
             const stepDescriptionHtml = item.stepDescription ? `<p><b>Descrizione:</b> ${item.stepDescription}</p>` : '';
-            const generalImagesHtml = (stepData.images || []).map(imgSrc => `<img src="${imgSrc}" class="image-preview">`).join('');
+            const generalImagesHtml = (stepData.images || []).map(imgSrc => `<div class="image-wrapper"><img src="${imgSrc}" class="image-preview"><button class="delete-photo-btn" data-type="general">&times;</button></div>`).join('');
 
             itemDiv.innerHTML = `
                 <div class="form-group">
@@ -947,12 +977,14 @@
                 ${measurementFieldsHtml}
                 <textarea class="item-notes" placeholder="Note generali per lo Step ${index + 1}">${stepData.notes || ''}</textarea>
                 <label for="general-image-upload-${item.id}" class="upload-btn">Allega foto generale dello Step</label>
-                <input type="file" id="general-image-upload-${item.id}" class="hidden-input" accept="image/*">
+                <input type="file" id="general-image-upload-${item.id}" class="hidden-input" data-is-measurement="false" accept="image/*">
                 <div class="image-container general-images">${generalImagesHtml}</div>
             `;
             checklistDiv.appendChild(itemDiv);
         });
         attachFileListeners();
+        attachImageClickListeners();
+        attachDeletePhotoListeners();
     }
 
     function renderConfigList() {
@@ -1076,32 +1108,34 @@
     function handleImageUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
+
         const reader = new FileReader();
         reader.onload = function(e) {
-            const imageContainer = event.target.nextElementSibling;
+            const imageContainer = event.target.closest('.form-group, .checklist-item').querySelector('.image-container');
+            const imageWrapper = document.createElement('div');
+            imageWrapper.classList.add('image-wrapper');
+            
             const img = document.createElement('img');
             img.src = e.target.result;
             img.classList.add('image-preview');
-            imageContainer.appendChild(img);
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.classList.add('delete-photo-btn');
+            deleteBtn.innerHTML = '&times;';
+            deleteBtn.dataset.type = event.target.dataset.isMeasurement === 'true' ? 'measurement' : 'general';
+            if (event.target.dataset.isMeasurement === 'true') {
+                deleteBtn.dataset.index = event.target.dataset.index;
+            }
+
+            imageWrapper.appendChild(img);
+            imageWrapper.appendChild(deleteBtn);
+            imageContainer.appendChild(imageWrapper);
+            
             attachImageClickListeners();
+            attachDeletePhotoListeners();
             saveReport();
         };
         reader.readAsDataURL(file);
-    }
-
-    function updateProgressBar() {
-        const checkedCount = Array.from(document.querySelectorAll('#workingReportContent input[type="checkbox"]')).filter(cb => cb.checked).length;
-        const totalCount = Array.from(document.querySelectorAll('#workingReportContent input[type="checkbox"]')).length;
-        const percentage = totalCount > 0 ? (checkedCount / totalCount) * 100 : 0;
-        progressBar.style.width = `${percentage}%`;
-        progressBar.textContent = `${Math.round(percentage)}%`;
-        if (percentage < 33) {
-            progressBar.style.backgroundColor = '#f44336';
-        } else if (percentage < 66) {
-            progressBar.style.backgroundColor = '#ff9800';
-        } else {
-            progressBar.style.backgroundColor = '#4CAF50';
-        }
     }
 
     function attachFileListeners() {
@@ -1118,6 +1152,38 @@
         });
     }
 
+    function attachDeletePhotoListeners() {
+        document.querySelectorAll('.delete-photo-btn').forEach(button => {
+            button.removeEventListener('click', deletePhoto);
+            button.addEventListener('click', deletePhoto);
+        });
+    }
+
+    function deletePhoto(event) {
+        const button = event.target;
+        const imageWrapper = button.closest('.image-wrapper');
+        const imageContainer = imageWrapper.closest('.image-container');
+        const stepDiv = button.closest('.checklist-item');
+        const stepId = stepDiv.dataset.stepId;
+        
+        if (button.dataset.type === 'general') {
+            const generalImages = Array.from(imageContainer.querySelectorAll('.image-preview'));
+            const index = generalImages.indexOf(imageWrapper.querySelector('.image-preview'));
+            if (index > -1) {
+                reportsData[currentReport].checklistData[stepId].images.splice(index, 1);
+            }
+        } else if (button.dataset.type === 'measurement') {
+            const index = button.dataset.index;
+            if (reportsData[currentReport].checklistData[stepId].measurements[index]) {
+                reportsData[currentReport].checklistData[stepId].measurements[index].image = '';
+            }
+        }
+        
+        imageWrapper.remove();
+        saveReport();
+        showMessageBox('Foto eliminata!');
+    }
+
     function openModal(e) {
         modalImage.src = e.target.src;
         photoModal.style.display = 'flex';
@@ -1131,6 +1197,22 @@
             messageBox.style.opacity = 0;
         }, duration);
     }
+    
+    function updateProgressBar() {
+        const checkedCount = Array.from(document.querySelectorAll('#workingReportContent input[type="checkbox"]')).filter(cb => cb.checked).length;
+        const totalCount = Array.from(document.querySelectorAll('#workingReportContent input[type="checkbox"]')).length;
+        const percentage = totalCount > 0 ? (checkedCount / totalCount) * 100 : 0;
+        progressBar.style.width = `${percentage}%`;
+        progressBar.textContent = `${Math.round(percentage)}%`;
+        if (percentage < 33) {
+            progressBar.style.backgroundColor = '#f44336';
+        } else if (percentage < 66) {
+            progressBar.style.backgroundColor = '#ff9800';
+        } else {
+            progressBar.style.backgroundColor = '#4CAF50';
+        }
+    }
+
 
     modalClose.forEach(closeBtn => {
         closeBtn.onclick = function() {
@@ -1301,6 +1383,8 @@
                 return stepData.checked;
             });
 
+            const allImagesToLoad = [];
+
             for (const step of checkedSteps) {
                 const stepData = currentData.checklistData[step.id] || {};
                 const checkedStepDiv = document.createElement('div');
@@ -1339,6 +1423,7 @@
                     photoItem.appendChild(imgElement);
                     photoItem.appendChild(pElement);
                     printAllPhotos.appendChild(photoItem);
+                    allImagesToLoad.push(imgElement);
                 }
             }
             reportOperatorSpan.textContent = mainOperator;
@@ -1352,8 +1437,7 @@
             reportToPrint.style.minHeight = '297mm';
 
             // Attendere il caricamento di tutte le immagini
-            const images = printAllPhotos.querySelectorAll('img');
-            const promises = Array.from(images).map(img => {
+            const promises = Array.from(allImagesToLoad).map(img => {
                 if (img.complete) return Promise.resolve();
                 return new Promise(resolve => {
                     img.onload = () => resolve();
