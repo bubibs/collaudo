@@ -222,8 +222,8 @@ border-radius: 5px;
 cursor: pointer;
 margin-bottom: 10px;
 }
-/* Modal per visualizzazione foto */
-#photoModal, #confirmModal {
+/* Modale per visualizzazione foto */
+#photoModal, #confirmModal, #deleteMachineModal {
 display: none;
 position: fixed;
 z-index: 1000;
@@ -307,7 +307,7 @@ font-size: 1.5em;
 line-height: 1;
 }
 /* Modale di conferma */
-#confirmModal .modal-content {
+#confirmModal .modal-content, #deleteMachineModal .modal-content {
 background-color: #fff;
 padding: 20px;
 border-radius: 8px;
@@ -317,30 +317,30 @@ max-width: 400px;
 width: 90%;
 position: relative;
 }
-#confirmModal h3 {
+#confirmModal h3, #deleteMachineModal h3 {
 margin-top: 0;
 color: #dc3545;
 }
-#confirmModal p {
+#confirmModal p, #deleteMachineModal p {
 margin-bottom: 20px;
 }
-#confirmModal .button-group {
+#confirmModal .button-group, #deleteMachineModal .button-group {
 display: flex;
 justify-content: space-around;
 gap: 10px;
 }
-#confirmModal .button-group button {
+#confirmModal .button-group button, #deleteMachineModal .button-group button {
 padding: 10px 20px;
 border: none;
 border-radius: 5px;
 cursor: pointer;
 font-size: 1em;
 }
-#confirmModal #confirmDeleteBtn {
+#confirmModal #confirmDeleteBtn, #deleteMachineModal #confirmDeleteMachineBtn {
 background-color: #dc3545;
 color: white;
 }
-#confirmModal #cancelDeleteBtn {
+#confirmModal #cancelDeleteBtn, #deleteMachineModal #cancelDeleteMachineBtn {
 background-color: #6c757d;
 color: white;
 }
@@ -435,6 +435,7 @@ max-width: 150px;
 </div>
 <button id="newMachineBtn" class="new-machine-btn">Crea Nuovo Report</button>
 <button id="saveReportBtn" class="save-btn" style="display:none;">Salva Report Corrente</button>
+<button id="deleteMachineBtn" class="delete-btn" style="display:none;">Elimina Report Corrente</button>
 </div>
 
 <button id="manageChecklistBtn" class="manage-btn" style="display:none;">Gestisci Step</button>
@@ -500,11 +501,24 @@ max-width: 150px;
 <div class="modal-content">
 <span class="modal-close">&times;</span>
 <h3>Conferma Eliminazione</h3>
-<p>Sei sicuro di voler eliminare lo step **<span id="stepToDeleteName"></span>**?</p>
+<p>Sei sicuro di voler eliminare lo step <b><span id="stepToDeleteName"></span></b>?</p>
 <p>Questa azione è irreversibile e lo step verrà rimosso da tutti i report.</p>
 <div class="button-group">
 <button id="cancelDeleteBtn">Annulla</button>
 <button id="confirmDeleteBtn">Elimina</button>
+</div>
+</div>
+</div>
+
+<div id="deleteMachineModal">
+<div class="modal-content">
+<span class="modal-close">&times;</span>
+<h3>Conferma Eliminazione Report</h3>
+<p>Sei sicuro di voler eliminare il report per il macchinario <b><span id="machineToDeleteName"></span></b>?</p>
+<p>Questa azione è irreversibile.</p>
+<div class="button-group">
+<button id="cancelDeleteMachineBtn">Annulla</button>
+<button id="confirmDeleteMachineBtn">Elimina</button>
 </div>
 </div>
 </div>
@@ -521,6 +535,7 @@ const machineNameInput = document.getElementById('machineNameInput');
 const newMachineBtn = document.getElementById('newMachineBtn');
 const loadReportBtn = document.getElementById('loadReportBtn');
 const saveReportBtn = document.getElementById('saveReportBtn');
+const deleteMachineBtn = document.getElementById('deleteMachineBtn');
 const manageChecklistBtn = document.getElementById('manageChecklistBtn');
 const generatePdfBtn = document.getElementById('generatePdfBtn');
 const configSection = document.getElementById('configSection');
@@ -531,16 +546,23 @@ const checklistDiv = document.getElementById('checklistItems');
 const progressBar = document.getElementById('progressBar');
 const photoModal = document.getElementById('photoModal');
 const modalImage = document.getElementById('modalImage');
-const modalClose = document.querySelector('.modal-close');
+const modalClose = document.querySelectorAll('.modal-close');
 const macchinarioField = document.getElementById('macchinario');
 const mainReportContent = document.getElementById('mainReportContent');
 const messageBox = document.getElementById('messageBox');
-// Modale di conferma
+
+// Modale di conferma step
 const confirmModal = document.getElementById('confirmModal');
 const stepToDeleteName = document.getElementById('stepToDeleteName');
 const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
 const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
 let stepToDeleteId = null;
+
+// Modale di conferma eliminazione macchinario
+const deleteMachineModal = document.getElementById('deleteMachineModal');
+const machineToDeleteName = document.getElementById('machineToDeleteName');
+const confirmDeleteMachineBtn = document.getElementById('confirmDeleteMachineBtn');
+const cancelDeleteMachineBtn = document.getElementById('cancelDeleteMachineBtn');
 
 let allSteps = JSON.parse(localStorage.getItem('allSteps')) || [
 { id: 'step-1', description: "Verifica allineamento cinghie", numMeasurements: 0, stepDescription: "Controllare visivamente l'allineamento delle cinghie di trasmissione e la loro integrità." },
@@ -629,6 +651,7 @@ updateProgressBar();
 attachImageClickListeners();
 toggleReportContent(true);
 saveReportBtn.style.display = 'block';
+deleteMachineBtn.style.display = 'block';
 }
 
 function clearReport() {
@@ -640,6 +663,9 @@ document.getElementById('note-aggiuntive').value = '';
 renderChecklist([], {});
 toggleReportContent(false);
 saveReportBtn.style.display = 'none';
+deleteMachineBtn.style.display = 'none';
+currentReport = null;
+machineSelector.value = '';
 }
 
 function toggleReportContent(show) {
@@ -888,9 +914,14 @@ setTimeout(() => {
 messageBox.style.opacity = 0;
 }, duration);
 }
-modalClose.onclick = function() {
+modalClose.forEach(closeBtn => {
+closeBtn.onclick = function() {
 photoModal.style.display = "none"
+confirmModal.style.display = "none"
+deleteMachineModal.style.display = "none"
 }
+});
+
 
 window.onclick = function(event) {
 if (event.target == photoModal) {
@@ -898,6 +929,9 @@ photoModal.style.display = "none"
 }
 if (event.target == confirmModal) {
 confirmModal.style.display = "none"
+}
+if (event.target == deleteMachineModal) {
+deleteMachineModal.style.display = "none"
 }
 }
 machineNameInput.addEventListener('input', (event) => {
@@ -908,7 +942,7 @@ currentReport = machineSelector.value;
 if (currentReport) {
 loadReport(currentReport);
 } else {
-alert("Seleziona un report da caricare.");
+showMessageBox("Seleziona un report da caricare.", 4000);
 }
 });
 
@@ -923,9 +957,10 @@ checklistData: {},
 finalNotes: { azioniCorrettive: '', noteAggiuntive: '' }
 };
 currentReport = newName;
+localStorage.setItem('reportsData', JSON.stringify(reportsData));
 renderMachineSelector();
 machineSelector.value = newName;
-loadReport(currentReport);
+loadReport(currentReport); // Corretto: Aggiungi questa linea
 showMessageBox(`Nuovo report per "${newName}" creato!`);
 machineNameInput.value = '';
 } else if (newName) {
@@ -933,6 +968,28 @@ showMessageBox(`Il report per "${newName}" esiste già.`, 4000);
 } else {
 showMessageBox("Per favore, inserisci un nome per il nuovo report.", 4000);
 }
+});
+// Funzione per eliminare un macchinario
+deleteMachineBtn.addEventListener('click', () => {
+if (currentReport) {
+machineToDeleteName.textContent = currentReport;
+deleteMachineModal.style.display = 'flex';
+}
+});
+
+confirmDeleteMachineBtn.addEventListener('click', () => {
+if (currentReport && reportsData[currentReport]) {
+delete reportsData[currentReport];
+localStorage.setItem('reportsData', JSON.stringify(reportsData));
+showMessageBox(`Report per "${currentReport}" eliminato.`, 4000);
+clearReport();
+renderMachineSelector();
+}
+deleteMachineModal.style.display = 'none';
+});
+
+cancelDeleteMachineBtn.addEventListener('click', () => {
+deleteMachineModal.style.display = 'none';
 });
 
 saveReportBtn.addEventListener('click', () => {
@@ -1077,5 +1134,3 @@ renderMachineSelector();
 </script>
 </body>
 </html>
-
-
