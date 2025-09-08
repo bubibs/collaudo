@@ -663,7 +663,7 @@
         <div class="cover-page" id="coverPage">
             <img src="https://via.placeholder.com/150" alt="Logo Azienda" class="company-logo">
             <h1>Report di Intervento Tecnico</h1>
-            <h2>Manutenzione e Messa in Fase Macchinario</h2>
+            <h2 id="pdfTitle"></h2>
             <div class="report-details">
                 <p><span>Macchinario:</span> <span id="printMacchinario"></span></p>
                 <p><span>Modello:</span> <span id="printModello"></span></p>
@@ -737,6 +737,7 @@
     // Elementi per il report stampabile
     const reportToPrint = document.getElementById('reportToPrint');
     const mainReportContent = document.getElementById('mainReportContent');
+    const pdfTitle = document.getElementById('pdfTitle');
     const reportDateSpan = document.getElementById('reportDate');
     const reportOperatorSpan = document.getElementById('reportOperator');
     const printMacchinario = document.getElementById('printMacchinario');
@@ -1260,6 +1261,7 @@
         }
 
         // Popola il report nascosto con i dati
+        pdfTitle.textContent = `Manutenzione e Messa in Fase Macchinario ${currentData.details.macchinario}`;
         printMacchinario.textContent = currentData.details.macchinario;
         printModello.textContent = currentData.details.modello;
         printSeriale.textContent = currentData.details.seriale;
