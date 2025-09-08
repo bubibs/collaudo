@@ -190,7 +190,7 @@ align-items: center;
 justify-content: center;
 gap: 10px;
 }
-.pdf-btn {
+.pdf-btn, .manage-btn, .save-btn, .new-machine-btn, #loadReportBtn, #deleteMachineBtn {
 background-color: #007bff;
 color: white;
 padding: 12px 20px;
@@ -205,6 +205,9 @@ display: flex;
 align-items: center;
 justify-content: center;
 gap: 10px;
+}
+#deleteMachineBtn {
+    background-color: #dc3545;
 }
 .delete-btn {
 background-color: #dc3545;
@@ -435,7 +438,10 @@ max-width: 150px;
 </div>
 <button id="newMachineBtn" class="new-machine-btn">Crea Nuovo Report</button>
 <button id="saveReportBtn" class="save-btn" style="display:none;">Salva Report Corrente</button>
-<button id="deleteMachineBtn" class="delete-btn" style="display:none;">Elimina Report Corrente</button>
+<button id="deleteMachineBtn" style="display:none;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+    Elimina Report Corrente
+</button>
 </div>
 
 <button id="manageChecklistBtn" class="manage-btn" style="display:none;">Gestisci Step</button>
@@ -651,7 +657,7 @@ updateProgressBar();
 attachImageClickListeners();
 toggleReportContent(true);
 saveReportBtn.style.display = 'block';
-deleteMachineBtn.style.display = 'block';
+deleteMachineBtn.style.display = 'flex';
 }
 
 function clearReport() {
@@ -960,7 +966,7 @@ currentReport = newName;
 localStorage.setItem('reportsData', JSON.stringify(reportsData));
 renderMachineSelector();
 machineSelector.value = newName;
-loadReport(currentReport); // Corretto: Aggiungi questa linea
+loadReport(currentReport);
 showMessageBox(`Nuovo report per "${newName}" creato!`);
 machineNameInput.value = '';
 } else if (newName) {
