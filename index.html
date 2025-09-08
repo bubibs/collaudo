@@ -361,6 +361,9 @@
         }
         
         /* Stili per la stampa */
+        #reportToPrint {
+            display: none;
+        }
         @media print {
             @page {
                 size: A4;
@@ -543,9 +546,119 @@
 </head>
 <body>
 
-<div class="container">
-    <button id="generatePdfBtn" class="pdf-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8c-.55 0-1-.45-1-1s.45-1 1-1h8c.55 0 1 .45 1 1s-.45 1-1 1zm0-4H8c-.55 0-1-.45-1-1s.45-1 1-1h8c.55 0 1 .45 1 1s-.45 1-1 1zm-3-5V3.5L18.5 9H13z"/></svg>Genera Report PDF</button>
+<div class="container" id="workingInterface">
+    <h1>Report di Messa in Fase Macchinario</h1>
+    <div id="machineManagement">
+        <h2>Gestione Report</h2>
+        <p>Seleziona o crea un nuovo report per un macchinario.</p>
+        <div class="form-group">
+            <label for="machineSelector">Seleziona Macchinario:</label>
+            <select id="machineSelector"></select>
+            <button id="loadReportBtn">Carica Report Selezionato</button>
+        </div>
+        <div class="form-group">
+            <label for="machineNameInput">Nome Nuovo Macchinario:</label>
+            <input type="text" id="machineNameInput" placeholder="Inserisci un nome">
+        </div>
+        <button id="newMachineBtn" class="new-machine-btn">Crea Nuovo Report</button>
+        <button id="saveReportBtn" class="save-btn" style="display:none;">Salva Report Corrente</button>
+        <button id="deleteMachineBtn" style="display:none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+            Elimina Report Corrente
+        </button>
+    </div>
 
+    <button id="manageChecklistBtn" class="manage-btn" style="display:none;">Gestisci Step</button>
+    <button id="generatePdfBtn" class="pdf-btn" style="display:none;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8c-.55 0-1-.45-1-1s.45-1 1-1h8c.55 0 1 .45 1 1s-.45 1-1 1zm0-4H8c-.55 0-1-.45-1-1s.45-1 1-1h8c.55 0 1 .45 1 1s-.45 1-1 1zm-3-5V3.5L18.5 9H13z"/></svg>Genera Report PDF</button>
+
+    <div id="configSection" style="display:none;">
+        <h2>Gestisci Step</h2>
+        <div id="allStepsList" class="sortable-list"></div>
+        <button id="addNewStepBtn" class="add-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Aggiungi Nuovo Step</button>
+        <button id="closeConfigBtn" class="pdf-btn">Chiudi Menù</button>
+    </div>
+
+    <div id="workingReportContent" style="display:none;">
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar">0%</div>
+        </div>
+        <div class="section">
+            <h2>Dettagli del Macchinario e dell'Operazione</h2>
+            <div class="form-group">
+                <label for="macchinario">Nome Macchinario:</label>
+                <input type="text" id="macchinario" name="macchinario">
+            </div>
+            <div class="form-group">
+                <label for="modello">Modello:</label>
+                <input type="text" id="modello" name="modello">
+            </div>
+            <div class="form-group">
+                <label for="seriale">Numero di Serie:</label>
+                <input type="text" id="seriale" name="seriale">
+            </div>
+        </div>
+        <div class="section">
+            <h2>Lista di Controllo e Verifica</h2>
+            <p>Spunta le operazioni completate, inserisci note/misure e allega foto.</p>
+            <div id="checklistItems"></div>
+        </div>
+        <div class="section">
+            <h2>Riepilogo e Note Finali</h2>
+            <div class="form-group">
+                <label for="azioni-correttive">Riepilogo delle azioni correttive:</label>
+                <textarea id="azioni-correttive" name="azioni-correttive" rows="4"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="note-aggiuntive">Note aggiuntive:</label>
+                <textarea id="note-aggiuntive" name="note-aggiuntive" rows="4"></textarea>
+            </div>
+        </div>
+        <div class="section">
+            <h2>Firma</h2>
+            <div class="signature-area">
+                <div class="signature-box">Operatore:</div>
+                <div class="signature-box">Supervisore (se applicabile):</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="photoModal">
+    <span class="modal-close">&times;</span>
+    <img id="modalImage">
+</div>
+
+<div id="confirmModal">
+    <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <h3>Conferma Eliminazione</h3>
+        <p>Sei sicuro di voler eliminare lo step <b><span id="stepToDeleteName"></span></b>?</p>
+        <p>Questa azione è irreversibile e lo step verrà rimosso da tutti i report.</p>
+        <div class="button-group">
+            <button id="cancelDeleteBtn">Annulla</button>
+            <button id="confirmDeleteBtn">Elimina</button>
+        </div>
+    </div>
+</div>
+
+<div id="deleteMachineModal">
+    <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <h3>Conferma Eliminazione Report</h3>
+        <p>Sei sicuro di voler eliminare il report per il macchinario <b><span id="machineToDeleteName"></span></b>?</p>
+        <p>Questa azione è irreversibile.</p>
+        <div class="button-group">
+            <button id="cancelDeleteMachineBtn">Annulla</button>
+            <button id="confirmDeleteMachineBtn">Elimina</button>
+        </div>
+    </div>
+</div>
+
+<div id="messageBox">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white" style="vertical-align: middle; margin-right: 10px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+    <span>Report salvato!</span>
+</div>
+
+<div id="reportToPrint">
     <div id="mainReportContent">
         <div class="cover-page" id="coverPage">
             <img src="https://via.placeholder.com/150" alt="Logo Azienda" class="company-logo">
@@ -555,6 +668,7 @@
                 <p><span>Oggetto:</span> Messa in Fase e Test Macchinario</p>
                 <p><span>Cliente:</span> N/A</p>
                 <p><span>Data Report:</span> <span id="reportDate"></span></p>
+                <p><span>Operatore:</span> <span id="reportOperator"></span></p>
             </div>
             <div class="cover-footer">
                 <p>Generato automaticamente da: Report di Messa in Fase v1.0</p>
@@ -565,38 +679,38 @@
             <div class="section">
                 <h2>Dettagli dell'Intervento</h2>
                 <div class="form-group">
-                    <label for="macchinario">Nome Macchinario:</label>
-                    <input type="text" id="macchinario" name="macchinario">
+                    <label>Nome Macchinario:</label>
+                    <span id="printMacchinario"></span>
                 </div>
                 <div class="form-group">
-                    <label for="modello">Modello:</label>
-                    <input type="text" id="modello" name="modello">
+                    <label>Modello:</label>
+                    <span id="printModello"></span>
                 </div>
                 <div class="form-group">
-                    <label for="seriale">Numero di Serie:</label>
-                    <input type="text" id="seriale" name="seriale">
+                    <label>Numero di Serie:</label>
+                    <span id="printSeriale"></span>
                 </div>
             </div>
             
             <div class="section">
                 <h2>Lista di Controllo e Verifica</h2>
-                <div id="checklistItems"></div>
+                <div id="printChecklistItems"></div>
             </div>
             
             <div class="section photo-section">
                 <h2>Documentazione Fotografica</h2>
-                <div id="allPhotos"></div>
+                <div id="printAllPhotos"></div>
             </div>
             
             <div class="section">
                 <h2>Riepilogo e Note Finali</h2>
                 <div class="form-group">
-                    <label for="azioni-correttive">Riepilogo delle azioni correttive:</label>
-                    <textarea id="azioni-correttive" name="azioni-correttive" rows="4"></textarea>
+                    <label>Riepilogo delle azioni correttive:</label>
+                    <div id="printAzioniCorrettive"></div>
                 </div>
                 <div class="form-group">
-                    <label for="note-aggiuntive">Note aggiuntive:</label>
-                    <textarea id="note-aggiuntive" name="note-aggiuntive" rows="4"></textarea>
+                    <label>Note aggiuntive:</label>
+                    <div id="printNoteAggiuntive"></div>
                 </div>
             </div>
             
@@ -611,80 +725,597 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <script>
+    const machineSelector = document.getElementById('machineSelector');
+    const machineNameInput = document.getElementById('machineNameInput');
+    const newMachineBtn = document.getElementById('newMachineBtn');
+    const loadReportBtn = document.getElementById('loadReportBtn');
+    const saveReportBtn = document.getElementById('saveReportBtn');
+    const deleteMachineBtn = document.getElementById('deleteMachineBtn');
+    const manageChecklistBtn = document.getElementById('manageChecklistBtn');
     const generatePdfBtn = document.getElementById('generatePdfBtn');
-    const mainReportContent = document.getElementById('mainReportContent');
-    const macchinarioField = document.getElementById('macchinario');
+    const configSection = document.getElementById('configSection');
+    const allStepsList = document.getElementById('allStepsList');
+    const addNewStepBtn = document.getElementById('addNewStepBtn');
+    const closeConfigBtn = document.getElementById('closeConfigBtn');
     const checklistDiv = document.getElementById('checklistItems');
-    const allPhotosDiv = document.getElementById('allPhotos');
+    const progressBar = document.getElementById('progressBar');
+    const photoModal = document.getElementById('photoModal');
+    const modalImage = document.getElementById('modalImage');
+    const modalClose = document.querySelectorAll('.modal-close');
+    const macchinarioField = document.getElementById('macchinario');
+    const workingReportContent = document.getElementById('workingReportContent');
+    const messageBox = document.getElementById('messageBox');
     
-    // Funzione fittizia per riempire i dati del report. Sostituisci con i tuoi dati reali.
-    function loadReportData() {
+    // Elementi per il report stampabile
+    const reportDateSpan = document.getElementById('reportDate');
+    const reportOperatorSpan = document.getElementById('reportOperator');
+    const printMacchinario = document.getElementById('printMacchinario');
+    const printModello = document.getElementById('printModello');
+    const printSeriale = document.getElementById('printSeriale');
+    const printChecklistItems = document.getElementById('printChecklistItems');
+    const printAllPhotos = document.getElementById('printAllPhotos');
+    const printAzioniCorrettive = document.getElementById('printAzioniCorrettive');
+    const printNoteAggiuntive = document.getElementById('printNoteAggiuntive');
+
+    // Modale di conferma step
+    const confirmModal = document.getElementById('confirmModal');
+    const stepToDeleteName = document.getElementById('stepToDeleteName');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    let stepToDeleteId = null;
+
+    // Modale di conferma eliminazione macchinario
+    const deleteMachineModal = document.getElementById('deleteMachineModal');
+    const machineToDeleteName = document.getElementById('machineToDeleteName');
+    const confirmDeleteMachineBtn = document.getElementById('confirmDeleteMachineBtn');
+    const cancelDeleteMachineBtn = document.getElementById('cancelDeleteMachineBtn');
+
+    let allSteps = JSON.parse(localStorage.getItem('allSteps')) || [
+        { id: 'step-1', description: "Verifica allineamento cinghie", numMeasurements: 0, stepDescription: "Controllare visivamente l'allineamento delle cinghie di trasmissione e la loro integrità." },
+        { id: 'step-2', description: "Controllo tensione catene", numMeasurements: 1, stepDescription: "Utilizzare un tensiometro per verificare che la tensione delle catene rientri nei parametri specificati dal produttore." },
+        { id: 'step-3', description: "Verifica e taratura sensori", numMeasurements: 2, stepDescription: "Controllare il corretto funzionamento dei sensori di posizione e, se necessario, calibrarli per garantire la precisione." },
+        { id: 'step-4', description: "Regolazione gioco ingranaggi", numMeasurements: 0, stepDescription: "Verificare il gioco degli ingranaggi e regolarlo secondo le specifiche tecniche per prevenire usura prematura." },
+    ];
+    let reportsData = JSON.parse(localStorage.getItem('reportsData')) || {};
+    let currentReport = null;
+    let operatorsList = JSON.parse(localStorage.getItem('operatorsList')) || [];
+
+    function generateUniqueId() {
+        return 'step-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    }
+
+    function saveAllSteps() {
+        localStorage.setItem('allSteps', JSON.stringify(allSteps));
+    }
+
+    function saveOperatorsList() {
+        localStorage.setItem('operatorsList', JSON.stringify(operatorsList));
+    }
+
+    function saveReport() {
+        if (!currentReport) return;
+        const reportName = currentReport;
         const reportData = {
             details: {
-                macchinario: 'Fresatrice CNC - Mod. 3000',
-                modello: 'CNC-F3000',
-                seriale: 'XYZ-123456789'
+                macchinario: macchinarioField.value,
+                modello: document.getElementById('modello').value,
+                seriale: document.getElementById('seriale').value,
             },
-            checklistItems: [
-                { id: '1', description: 'Verifica allineamento cinghie', notes: 'Allineamento perfetto.', images: ['https://via.placeholder.com/400x300?text=Cinghia+Allineata'] },
-                { id: '2', description: 'Controllo tensione catene', notes: 'Tensione corretta, nessun intervento.', images: ['https://via.placeholder.com/400x300?text=Tensione+Catena'] },
-                { id: '3', description: 'Regolazione gioco ingranaggi', notes: 'Regolato gioco su 0.05 mm.', images: ['https://via.placeholder.com/400x300?text=Ingranaggi'] },
-            ],
+            checklistConfig: reportsData[reportName].checklistConfig,
+            checklistData: {},
             finalNotes: {
-                azioniCorrettive: 'Sostituzione sensore di prossimità difettoso.',
-                noteAggiuntive: 'Macchinario testato per 2 ore, funzionamento regolare.'
+                azioniCorrettive: document.getElementById('azioni-correttive').value,
+                noteAggiuntive: document.getElementById('note-aggiuntive').value,
             }
         };
+        const checklistItemsDiv = document.querySelectorAll('.checklist-item');
+        checklistItemsDiv.forEach((itemDiv) => {
+            const stepId = itemDiv.dataset.stepId;
+            const stepData = {
+                checked: itemDiv.querySelector('input[type="checkbox"]').checked,
+                date: itemDiv.querySelector('.step-date').value,
+                operator: itemDiv.querySelector('.step-operator').value,
+                notes: itemDiv.querySelector('.item-notes').value,
+                measurements: [],
+                images: []
+            };
 
-        // Popola i campi
-        macchinarioField.value = reportData.details.macchinario;
-        document.getElementById('modello').value = reportData.details.modello;
-        document.getElementById('seriale').value = reportData.details.seriale;
-        document.getElementById('azioni-correttive').value = reportData.finalNotes.azioniCorrettive;
-        document.getElementById('note-aggiuntive').value = reportData.finalNotes.noteAggiuntive;
-        document.getElementById('reportDate').textContent = new Date().toLocaleDateString('it-IT');
-        
-        // Renderizza la checklist
+            const measurementInputs = itemDiv.querySelectorAll('.measurement-group input[type="text"]');
+            const measurementImageContainers = itemDiv.querySelectorAll('.measurement-group .image-container');
+            measurementInputs.forEach((input, i) => {
+                const img = measurementImageContainers[i].querySelector('.image-preview');
+                const imgSrc = img ? img.src : '';
+                stepData.measurements.push({ value: input.value, image: imgSrc });
+            });
+
+            const generalImages = itemDiv.querySelectorAll('.general-images .image-preview');
+            generalImages.forEach(img => {
+                stepData.images.push(img.src);
+            });
+
+            reportData.checklistData[stepId] = stepData;
+        });
+        reportsData[reportName] = reportData;
+        localStorage.setItem('reportsData', JSON.stringify(reportsData));
+        saveOperatorsList();
+        console.log(`Report for "${reportName}" saved.`);
+    }
+
+    function loadReport(reportName) {
+        if (!reportName || !reportsData[reportName]) {
+            clearReport();
+            return;
+        }
+        const reportData = reportsData[reportName];
+        currentReport = reportName;
+        macchinarioField.value = reportData.details.macchinario || '';
+        document.getElementById('modello').value = reportData.details.modello || '';
+        document.getElementById('seriale').value = reportData.details.seriale || '';
+        document.getElementById('azioni-correttive').value = reportData.finalNotes.azioniCorrettive || '';
+        document.getElementById('note-aggiuntive').value = reportData.finalNotes.noteAggiuntive || '';
+        renderChecklist(reportData.checklistConfig, reportData.checklistData);
+        updateProgressBar();
+        attachImageClickListeners();
+        toggleReportContent(true);
+        saveReportBtn.style.display = 'block';
+        deleteMachineBtn.style.display = 'flex';
+    }
+
+    function clearReport() {
+        macchinarioField.value = '';
+        document.getElementById('modello').value = '';
+        document.getElementById('seriale').value = '';
+        document.getElementById('azioni-correttive').value = '';
+        document.getElementById('note-aggiuntive').value = '';
+        renderChecklist([], {});
+        toggleReportContent(false);
+        saveReportBtn.style.display = 'none';
+        deleteMachineBtn.style.display = 'none';
+        currentReport = null;
+        machineSelector.value = '';
+    }
+
+    function toggleReportContent(show) {
+        workingReportContent.style.display = show ? 'block' : 'none';
+        manageChecklistBtn.style.display = show ? 'block' : 'none';
+        generatePdfBtn.style.display = show ? 'block' : 'none';
+        configSection.style.display = 'none';
+    }
+
+    function renderMachineSelector() {
+        machineSelector.innerHTML = '<option value="">- Seleziona un Report -</option>';
+        const machineNames = Object.keys(reportsData).sort();
+        machineNames.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            machineSelector.appendChild(option);
+        });
+    }
+
+    function renderChecklist(config, data) {
         checklistDiv.innerHTML = '';
-        allPhotosDiv.innerHTML = '';
-
-        reportData.checklistItems.forEach(item => {
-            // Aggiungi l'elemento alla checklist
+        config.forEach((item, index) => {
+            const stepData = data[item.id] || {};
             const itemDiv = document.createElement('div');
             itemDiv.classList.add('checklist-item');
+            itemDiv.dataset.stepId = item.id;
+            let measurementFieldsHtml = '';
+            if (item.numMeasurements > 0) {
+                for (let i = 0; i < item.numMeasurements; i++) {
+                    const measurementValue = (stepData.measurements && stepData.measurements[i]) ? stepData.measurements[i].value : '';
+                    const measurementImage = (stepData.measurements && stepData.measurements[i]) ? stepData.measurements[i].image : '';
+                    measurementFieldsHtml += `
+                        <div class="measurement-group">
+                            <label>Misura ${i + 1}:</label>
+                            <input type="text" class="item-measurement" value="${measurementValue}" placeholder="Valore (es. 12.5 mm)">
+                            <label for="image-upload-${item.id}-${i}" class="upload-btn">Allega foto per quota ${i + 1}</label>
+                            <input type="file" id="image-upload-${item.id}-${i}" class="hidden-input" accept="image/*">
+                            <div class="image-container">
+                                ${measurementImage ? `<img src="${measurementImage}" class="image-preview">` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            const stepDescriptionHtml = item.stepDescription ? `<p><b>Descrizione:</b> ${item.stepDescription}</p>` : '';
+            const generalImagesHtml = (stepData.images || []).map(imgSrc => `<img src="${imgSrc}" class="image-preview">`).join('');
+
             itemDiv.innerHTML = `
-                <div class="item-header">
-                    <input type="checkbox" checked disabled>
-                    <label>${item.description}</label>
+                <div class="form-group">
+                    <label for="date-${item.id}">Data di esecuzione:</label>
+                    <input type="date" class="step-date" id="date-${item.id}" value="${stepData.date || ''}">
                 </div>
-                <textarea class="item-notes" readonly>${item.notes}</textarea>
+                <div class="form-group">
+                    <label for="operator-${item.id}">Operatore:</label>
+                    <input type="text" class="step-operator" id="operator-${item.id}" value="${stepData.operator || ''}" placeholder="Nome operatore" list="operatorsList">
+                    <datalist id="operatorsList">
+                        ${operatorsList.map(name => `<option value="${name}">`).join('')}
+                    </datalist>
+                </div>
+                <div class="item-header">
+                    <input type="checkbox" id="check-${item.id}" ${stepData.checked ? 'checked' : ''}>
+                    <label for="check-${item.id}">Step ${index + 1}: ${item.description}</label>
+                </div>
+                ${stepDescriptionHtml}
+                ${measurementFieldsHtml}
+                <textarea class="item-notes" placeholder="Note generali per lo Step ${index + 1}">${stepData.notes || ''}</textarea>
+                <label for="general-image-upload-${item.id}" class="upload-btn">Allega foto generale dello Step</label>
+                <input type="file" id="general-image-upload-${item.id}" class="hidden-input" accept="image/*">
+                <div class="image-container general-images">${generalImagesHtml}</div>
             `;
             checklistDiv.appendChild(itemDiv);
+        });
+        attachFileListeners();
+    }
 
-            // Aggiungi le foto alla sezione fotografica
-            if (item.images && item.images.length > 0) {
-                item.images.forEach(imgSrc => {
-                    const photoItem = document.createElement('div');
-                    photoItem.classList.add('photo-item');
-                    photoItem.innerHTML = `
-                        <img src="${imgSrc}">
-                        <p><b>Dettaglio:</b> ${item.description}</p>
-                    `;
-                    allPhotosDiv.appendChild(photoItem);
-                });
+    function renderConfigList() {
+        allStepsList.innerHTML = '';
+        const reportConfig = reportsData[currentReport]?.checklistConfig || [];
+        const includedSteps = [];
+        const notIncludedSteps = [];
+
+        allSteps.forEach(step => {
+            if (reportConfig.some(s => s.id === step.id)) {
+                includedSteps.push(step);
+            } else {
+                notIncludedSteps.push(step);
+            }
+        });
+
+        allSteps = [...includedSteps, ...notIncludedSteps];
+        saveAllSteps();
+
+        allSteps.forEach((step, index) => {
+            const isIncluded = reportConfig.some(s => s.id === step.id);
+            const itemDiv = document.createElement('div');
+            itemDiv.classList.add('config-item');
+            if (isIncluded) {
+                itemDiv.classList.add('active');
+            }
+            itemDiv.dataset.stepId = step.id;
+            itemDiv.innerHTML = `
+                <div class="config-item-header">
+                    <span class="handle">⋮</span>
+                    <span>${step.description}</span>
+                    <input type="checkbox" id="include-step-${step.id}" data-step-id="${step.id}" ${isIncluded ? 'checked' : ''}>
+                </div>
+                <div class="config-item-content">
+                    <label>Titolo Step:</label>
+                    <input type="text" value="${step.description}" data-step-id="${step.id}" class="config-description-input">
+                    <label>Descrizione Dettagliata:</label>
+                    <textarea data-step-id="${step.id}" class="config-step-description-input" rows="2">${step.stepDescription || ''}</textarea>
+                    <div class="btn-group">
+                        <label>Misure:</label>
+                        <input type="number" min="0" value="${step.numMeasurements}" data-step-id="${step.id}" class="config-measure-count-input" style="width: 60px;">
+                        <button class="delete-btn" onclick="showDeleteConfirm('${step.id}')">Elimina</button>
+                    </div>
+                </div>
+            `;
+            allStepsList.appendChild(itemDiv);
+        });
+        document.querySelectorAll('.config-item-header').forEach(header => {
+            header.onclick = (e) => {
+                if (e.target.type !== 'checkbox' && !e.target.classList.contains('handle')) {
+                    const content = header.nextElementSibling;
+                    if (content.style.display === "flex") {
+                        content.style.display = "none"
+                    } else {
+                        content.style.display = "flex"
+                    }
+                }
+            };
+        });
+
+        initSortable();
+    }
+
+    function initSortable() {
+        if (allStepsList.sortable) {
+            allStepsList.sortable.destroy();
+        }
+        allStepsList.sortable = new Sortable(allStepsList, {
+            animation: 150,
+            handle: '.handle',
+            onEnd: function(evt) {
+                const newOrder = Array.from(allStepsList.children).map(li => allSteps.find(step => step.id === li.dataset.stepId));
+                allSteps = newOrder;
+                saveAllSteps();
+                if (currentReport) {
+                    const newChecklistConfig = allSteps.filter(step => {
+                        const input = document.getElementById(`include-step-${step.id}`);
+                        return input && input.checked;
+                    }).map(step => ({id: step.id, description: step.description, numMeasurements: step.numMeasurements, stepDescription: step.stepDescription}));
+                    reportsData[currentReport].checklistConfig = newChecklistConfig;
+                    saveReport();
+                }
             }
         });
     }
 
+    window.showDeleteConfirm = function(stepId) {
+        const step = allSteps.find(s => s.id === stepId);
+        if (step) {
+            stepToDeleteName.textContent = step.description;
+            stepToDeleteId = stepId;
+            confirmModal.style.display = 'flex';
+        }
+    };
+
+    confirmDeleteBtn.addEventListener('click', () => {
+        if (stepToDeleteId) {
+            deleteStepModel(stepToDeleteId);
+            stepToDeleteId = null;
+        }
+        confirmModal.style.display = 'none';
+    });
+
+    cancelDeleteBtn.addEventListener('click', () => {
+        confirmModal.style.display = 'none';
+        stepToDeleteId = null;
+    });
+
+    function deleteStepModel(stepId) {
+        allSteps = allSteps.filter(step => step.id !== stepId);
+        saveAllSteps();
+        for (const reportName in reportsData) {
+            reportsData[reportName].checklistConfig = reportsData[reportName].checklistConfig.filter(s => s.id !== stepId);
+            delete reportsData[reportName].checklistData[stepId];
+        }
+        localStorage.setItem('reportsData', JSON.stringify(reportsData));
+        renderConfigList();
+        if (currentReport) loadReport(currentReport);
+    }
+
+    function handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imageContainer = event.target.nextElementSibling;
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.classList.add('image-preview');
+            imageContainer.appendChild(img);
+            attachImageClickListeners();
+            saveReport();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function updateProgressBar() {
+        const checkedCount = Array.from(document.querySelectorAll('#workingReportContent input[type="checkbox"]')).filter(cb => cb.checked).length;
+        const totalCount = Array.from(document.querySelectorAll('#workingReportContent input[type="checkbox"]')).length;
+        const percentage = totalCount > 0 ? (checkedCount / totalCount) * 100 : 0;
+        progressBar.style.width = `${percentage}%`;
+        progressBar.textContent = `${Math.round(percentage)}%`;
+        if (percentage < 33) {
+            progressBar.style.backgroundColor = '#f44336';
+        } else if (percentage < 66) {
+            progressBar.style.backgroundColor = '#ff9800';
+        } else {
+            progressBar.style.backgroundColor = '#4CAF50';
+        }
+    }
+
+    function attachFileListeners() {
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.removeEventListener('change', handleImageUpload);
+            input.addEventListener('change', handleImageUpload);
+        });
+    }
+
+    function attachImageClickListeners() {
+        document.querySelectorAll('.image-preview').forEach(img => {
+            img.removeEventListener('click', openModal);
+            img.addEventListener('click', openModal);
+        });
+    }
+
+    function openModal(e) {
+        modalImage.src = e.target.src;
+        photoModal.style.display = 'flex';
+    }
+
+    function showMessageBox(message, duration = 3000) {
+        messageBox.querySelector('span').textContent = message;
+        messageBox.style.opacity = 1;
+        setTimeout(() => {
+            messageBox.style.opacity = 0;
+        }, duration);
+    }
+
+    modalClose.forEach(closeBtn => {
+        closeBtn.onclick = function() {
+            photoModal.style.display = "none"
+            confirmModal.style.display = "none"
+            deleteMachineModal.style.display = "none"
+        }
+    });
+
+    window.onclick = function(event) {
+        if (event.target == photoModal) {
+            photoModal.style.display = "none"
+        }
+        if (event.target == confirmModal) {
+            confirmModal.style.display = "none"
+        }
+        if (event.target == deleteMachineModal) {
+            deleteMachineModal.style.display = "none"
+        }
+    }
+
+    machineNameInput.addEventListener('input', (event) => {
+        macchinarioField.value = event.target.value;
+    });
+
+    loadReportBtn.addEventListener('click', () => {
+        currentReport = machineSelector.value;
+        if (currentReport) {
+            loadReport(currentReport);
+        } else {
+            showMessageBox("Seleziona un report da caricare.", 4000);
+        }
+    });
+
+    newMachineBtn.addEventListener('click', () => {
+        const newName = machineNameInput.value.trim();
+        if (newName && !reportsData[newName]) {
+            const initialChecklistConfig = allSteps.map(step => ({id: step.id, description: step.description, numMeasurements: step.numMeasurements, stepDescription: step.stepDescription}));
+            reportsData[newName] = {
+                details: { macchinario: newName, modello: '', seriale: '' },
+                checklistConfig: initialChecklistConfig,
+                checklistData: {},
+                finalNotes: { azioniCorrettive: '', noteAggiuntive: '' }
+            };
+            currentReport = newName;
+            localStorage.setItem('reportsData', JSON.stringify(reportsData));
+            renderMachineSelector();
+            machineSelector.value = newName;
+            loadReport(currentReport);
+            showMessageBox(`Nuovo report per "${newName}" creato!`);
+            machineNameInput.value = '';
+        } else if (newName) {
+            showMessageBox(`Il report per "${newName}" esiste già.`, 4000);
+        } else {
+            showMessageBox("Per favore, inserisci un nome per il nuovo report.", 4000);
+        }
+    });
+    
+    deleteMachineBtn.addEventListener('click', () => {
+        if (currentReport) {
+            machineToDeleteName.textContent = currentReport;
+            deleteMachineModal.style.display = 'flex';
+        }
+    });
+
+    confirmDeleteMachineBtn.addEventListener('click', () => {
+        if (currentReport && reportsData[currentReport]) {
+            delete reportsData[currentReport];
+            localStorage.setItem('reportsData', JSON.stringify(reportsData));
+            showMessageBox(`Report per "${currentReport}" eliminato.`, 4000);
+            clearReport();
+            renderMachineSelector();
+        }
+        deleteMachineModal.style.display = 'none';
+    });
+
+    cancelDeleteMachineBtn.addEventListener('click', () => {
+        deleteMachineModal.style.display = 'none';
+    });
+
+    saveReportBtn.addEventListener('click', () => {
+        if (currentReport) {
+            saveReport();
+            showMessageBox('Report salvato con successo!');
+        } else {
+            showMessageBox('Seleziona o crea prima un report.');
+        }
+    });
+
+    manageChecklistBtn.addEventListener('click', () => {
+        if (!currentReport) {
+            showMessageBox("Devi prima caricare un report per poter gestire gli step.", 4000);
+            return;
+        }
+        configSection.style.display = configSection.style.display === 'none' ? 'block' : 'none';
+        if (configSection.style.display === 'block') {
+            renderConfigList();
+        }
+    });
+
+    closeConfigBtn.addEventListener('click', () => {
+        configSection.style.display = 'none';
+        if(currentReport) {
+            loadReport(currentReport);
+        }
+    });
+
+    addNewStepBtn.addEventListener('click', () => {
+        const newStepName = prompt("Inserisci il nome del nuovo step:");
+        if (!newStepName) return;
+        const newStepDescription = prompt("Inserisci la descrizione dettagliata:");
+        const newStepMeasurements = prompt("Quante misure vuoi aggiungere a questo step? (Inserisci un numero):");
+        const numMeasurements = parseInt(newStepMeasurements) || 0;
+        const newStepId = generateUniqueId();
+        const newStep = {
+            id: newStepId,
+            description: newStepName,
+            numMeasurements: numMeasurements,
+            stepDescription: newStepDescription
+        };
+        allSteps.push(newStep);
+        saveAllSteps();
+        if (currentReport) {
+            reportsData[currentReport].checklistConfig.push(newStep);
+            saveReport();
+        }
+        renderConfigList();
+    });
+
     generatePdfBtn.addEventListener('click', () => {
-        // Nascondi il pulsante di generazione PDF prima della stampa
-        generatePdfBtn.style.display = 'none';
+        // Popola il report nascosto con i dati dell'interfaccia di lavoro
+        const currentData = reportsData[currentReport];
+        if (!currentData) {
+            showMessageBox("Carica un report prima di generare il PDF.", 4000);
+            return;
+        }
+
+        printMacchinario.textContent = currentData.details.macchinario;
+        printModello.textContent = currentData.details.modello;
+        printSeriale.textContent = currentData.details.seriale;
+        reportDateSpan.textContent = new Date().toLocaleDateString('it-IT');
+        printAzioniCorrettive.textContent = currentData.finalNotes.azioniCorrettive;
+        printNoteAggiuntive.textContent = currentData.finalNotes.noteAggiuntive;
+        
+        // Popola la checklist e le foto per la stampa
+        printChecklistItems.innerHTML = '';
+        printAllPhotos.innerHTML = '';
+        let mainOperator = '';
+        
+        currentData.checklistConfig.forEach((step) => {
+            const stepData = currentData.checklistData[step.id] || {};
+            if (stepData.checked) {
+                const checkedStepDiv = document.createElement('div');
+                checkedStepDiv.classList.add('checklist-item');
+                checkedStepDiv.innerHTML = `
+                    <div class="item-header">
+                        <input type="checkbox" checked disabled>
+                        <label>${step.description}</label>
+                    </div>
+                    ${step.stepDescription ? `<p><b>Descrizione:</b> ${step.stepDescription}</p>` : ''}
+                    <div class="form-group">
+                        <label>Data:</label>
+                        <span>${stepData.date || 'N/D'}</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Operatore:</label>
+                        <span>${stepData.operator || 'N/D'}</span>
+                    </div>
+                    ${stepData.notes ? `<textarea class="item-notes" readonly>${stepData.notes}</textarea>` : ''}
+                `;
+                printChecklistItems.appendChild(checkedStepDiv);
+
+                if (stepData.operator) mainOperator = stepData.operator;
+                
+                // Aggiungi le immagini
+                const allImages = [...(stepData.images || []), ...(stepData.measurements || []).map(m => m.image)].filter(img => img);
+                allImages.forEach(imgSrc => {
+                    const photoItem = document.createElement('div');
+                    photoItem.classList.add('photo-item');
+                    photoItem.innerHTML = `<img src="${imgSrc}"><p>${step.description}</p>`;
+                    printAllPhotos.appendChild(photoItem);
+                });
+            }
+        });
+        reportOperatorSpan.textContent = mainOperator;
 
         const element = document.getElementById('mainReportContent');
-        const filename = `Report_${macchinarioField.value.replace(/\s/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
+        const filename = `Report_${currentData.details.macchinario.replace(/\s/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
         
         const options = {
             margin: [0, 0, 0, 0], // Margini gestiti dal CSS
@@ -694,13 +1325,94 @@
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        html2pdf().set(options).from(element).save().then(() => {
-            // Ripristina la visibilità del pulsante dopo il salvataggio
-            generatePdfBtn.style.display = 'block';
-        });
+        html2pdf().set(options).from(element).save();
     });
 
-    document.addEventListener('DOMContentLoaded', loadReportData);
+    document.addEventListener('input', function(event) {
+        if (!currentReport) return;
+        if (event.target.closest('#workingReportContent')) {
+            saveReport();
+            updateProgressBar();
+        } else if (event.target.closest('#configSection')) {
+            const stepId = event.target.dataset.stepId;
+            const step = allSteps.find(s => s.id === stepId);
+            if (step) {
+                let hasChanges = false;
+                if (event.target.classList.contains('config-description-input')) {
+                    step.description = event.target.value;
+                    hasChanges = true;
+                } else if (event.target.classList.contains('config-step-description-input')) {
+                    step.stepDescription = event.target.value;
+                    hasChanges = true;
+                } else if (event.target.classList.contains('config-measure-count-input')) {
+                    const newCount = parseInt(event.target.value);
+                    if (!isNaN(newCount) && newCount >= 0) {
+                        step.numMeasurements = newCount;
+                        hasChanges = true;
+                    }
+                }
+                if (hasChanges) {
+                    saveAllSteps();
+                    const reportConfig = reportsData[currentReport].checklistConfig;
+                    const updatedConfig = reportConfig.map(s => {
+                        if (s.id === stepId) {
+                            return {id: step.id, description: step.description, numMeasurements: step.numMeasurements, stepDescription: step.stepDescription};
+                        }
+                        return s;
+                    });
+                    reportsData[currentReport].checklistConfig = updatedConfig;
+                    saveReport();
+                }
+            }
+        }
+    });
+
+    document.addEventListener('change', function(event) {
+        if (event.target.type === 'checkbox' && event.target.id.startsWith('include-step-')) {
+            const stepId = event.target.dataset.stepId;
+            const step = allSteps.find(s => s.id === stepId);
+            if (step && currentReport) {
+                const reportConfig = reportsData[currentReport].checklistConfig;
+                if (event.target.checked) {
+                    const newStepData = {id: step.id, description: step.description, numMeasurements: step.numMeasurements, stepDescription: step.stepDescription};
+                    reportConfig.push(newStepData);
+                } else {
+                    reportsData[currentReport].checklistConfig = reportConfig.filter(s => s.id !== stepId);
+                    delete reportsData[currentReport].checklistData[stepId];
+                }
+                saveReport();
+                renderConfigList();
+            }
+        } else if (event.target.closest('#workingReportContent')) {
+            saveReport();
+            if (event.target.type === 'checkbox' && event.target.id.startsWith('check-')) {
+                updateProgressBar();
+            }
+        }
+    });
+
+    document.addEventListener('focusout', function(event) {
+        if (event.target.classList.contains('step-operator')) {
+            const operatorName = event.target.value.trim();
+            if (operatorName !== '' && !operatorsList.includes(operatorName)) {
+                operatorsList.push(operatorName);
+                operatorsList.sort();
+                saveOperatorsList();
+                const datalist = document.getElementById('operatorsList');
+                datalist.innerHTML = operatorsList.map(name => `<option value="${name}">`).join('');
+            }
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        allSteps.forEach(step => {
+            if (!step.id) {
+                step.id = generateUniqueId();
+            }
+        });
+        saveAllSteps();
+        renderMachineSelector();
+    });
 </script>
 </body>
 </html>
